@@ -1,7 +1,7 @@
 package editor
 
 import (
-	"github.com/filwisher/godit/screen"
+	"github.com/filwisher/go-ed/screen"
 )
 
 type Editor struct {
