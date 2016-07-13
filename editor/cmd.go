@@ -17,29 +17,31 @@ type Trie struct {
 }
 
 func (t *Trie) Add(name []byte, f Cmd) {
-    
+   
+		if len(name) == 0 {
+			t.Fn = f
+			return
+		}	
+		
     child, ok := t.Children[name[0]]
     if !ok {
         child = NewCmdSet()
         t.Children[name[0]] = child
     }
-    if len(name) > 1 {
-        child.Add(name[1:], f)
-        return
-    }
-    child.Fn = f
+		child.Add(name[1:], f)
 }
 
 func (t *Trie) Find(name []byte) Cmd {
+	
+		if len(name) == 0 {
+			return t.Fn	
+		}
     
-    child, ok := t.Children[name[0]]
+		child, ok := t.Children[name[0]]
     if !ok {
         return noop
     }
-    if len(name) > 1 {
-        return child.Find(name[1:])
-    }
-    return child.Fn
+		return child.Find(name[1:])
 }
 
 func NewCmdSet() *Trie {
