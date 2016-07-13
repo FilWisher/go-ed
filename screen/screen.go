@@ -9,8 +9,8 @@ import "fmt"
 const (
 	ESC_CLEAR_SCREEN 	string = "\x1b[2J"
 	ESC_CURSOR_SET 		string = "\x1b[%d;%dH"
-	ESC_CURSOR_HOME	  string = "\x1b[H"
-	ESC_CURSOR_HIDE	  string = "\x1b[?25l"
+	ESC_CURSOR_HOME	  	string = "\x1b[H"
+	ESC_CURSOR_HIDE	  	string = "\x1b[?25l"
 	ESC_CURSOR_SHOW		string = "\x1b[?25h"
 )
 
