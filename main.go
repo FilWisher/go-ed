@@ -10,7 +10,7 @@ import (
 
 var (
 	e editor.Editor = editor.NewEditor(10, 10)
-	cmds *editor.Trie = loadCommands(commands)
+	bindings *editor.Trie = loadCommands(commands)
 )
 
 func redrawScreen() {	
@@ -37,7 +37,7 @@ func commandLoop(end chan bool) {
 			log.Fatal(err.Error())	
 		}
 
-		cmd := cmds.Find(key)
+		cmd := bindings.Find(key)
 		e = cmd(e, end)
 		
 		redrawScreen()
