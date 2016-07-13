@@ -5,43 +5,45 @@
 
 package editor
 
-type Cmd func (Editor, chan bool) Editor 
+type Cmd func(Editor, chan bool) Editor
 
 var noop Cmd = func(e Editor, end chan bool) Editor {
 	return e
 }
 
 type Trie struct {
-    Fn Cmd 
-    Children map[byte]*Trie
+	Fn       Cmd
+	Children map[byte]*Trie
 }
 
 func (t *Trie) Add(name []byte, f Cmd) {
-    
-    child, ok := t.Children[name[0]]
-    if !ok {
-        child = NewCmdSet()
-        t.Children[name[0]] = child
-    }
-    if len(name) > 1 {
-        child.Add(name[1:], f)
-        return
-    }
-    child.Fn = f
+
+	if len(name) == 0 {
+		t.Fn = f
+		return
+	}
+
+	child, ok := t.Children[name[0]]
+	if !ok {
+		child = NewCmdSet()
+		t.Children[name[0]] = child
+	}
+	child.Add(name[1:], f)
 }
 
 func (t *Trie) Find(name []byte) Cmd {
-    
-    child, ok := t.Children[name[0]]
-    if !ok {
-        return noop
-    }
-    if len(name) > 1 {
-        return child.Find(name[1:])
-    }
-    return child.Fn
+
+	if len(name) == 0 {
+		return t.Fn
+	}
+
+	child, ok := t.Children[name[0]]
+	if !ok {
+		return noop
+	}
+	return child.Find(name[1:])
 }
 
 func NewCmdSet() *Trie {
-    return &Trie{noop, make(map[byte]*Trie)}
+	return &Trie{noop, make(map[byte]*Trie)}
 }

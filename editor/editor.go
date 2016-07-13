@@ -5,7 +5,7 @@ import (
 )
 
 type Editor struct {
-	Cur screen.Cursor
+	Cur    screen.Cursor
 	Screen screen.Screen
 }
 
