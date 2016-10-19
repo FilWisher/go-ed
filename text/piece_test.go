@@ -1,68 +1,76 @@
 package text_test
 
 import (
-	"github.com/filwisher/go-ed/text"
 	"testing"
-	//"os"
-	"fmt"
+	"github.com/filwisher/go-ed/text"
+	"os"
 )
 
 func TestSplit(t *testing.T) {
-	p, err := text.PieceFromFile("./testfile.txt")
-	if err != nil {
-		t.Fatalf("could not open File: %s", err.Error())	
+
+	totalLen := int64(50)
+	chain := text.Piece{
+		File: os.Stdin,
+		Off: 0,
+		Len: totalLen,
+		Prev: nil,
+		Next: nil,
 	}
 	
-	len := p.Len
-	text, err := p.Bytes()
-	if err != nil {
-		t.Fatalf("could not read: %s", err.Error())	
+	for i := int64(40); i >= 1; i /= 2 {
+		chain.Split(i)	
 	}	
-	
-	before, after := p.Split(7)
-	if before.Len + after.Len != len {
-		t.Fatalf("piece sizes not maintained after split")		
+
+	count := int64(0)
+	for p := &chain; p != nil; p = p.Next {
+		count += p.Len	
 	}
 	
-	fullText, err := p.Content()
-	if err != nil {
-		t.Fatalf("could not read: %s", err.Error())	
-	}	
-	if string(text) != string(fullText) {
-		t.Fatalf("2.split deformed text: %s != %s", text, string(fullText))	
+	if count != totalLen {
+		t.Errorf("total length of chain expected to be %d but was %d", totalLen)	
 	}
 }
 
-func TestInsert(t *testing.T) {
-	p, err := text.PieceFromFile("./testfile.txt")
-	if err != nil {
-		t.Fatalf("could not open File: %s", err.Error())	
+func atomize(p *text.Piece) {
+	length := p.Len
+	for i := int64(0); i < length; i++ {
+		p.Split(i)	
 	}
-	
-	p.Insert(1, &text.Piece{
-		File: p.File,
-		Off: p.Off + 1,
-		Len: 1,
-	})
-	
-	fullText, err := p.Content()
-	if err != nil {
-		t.Fatalf("could not read: %s", err.Error())	
-	}	
-	fmt.Printf("got %s\n", fullText)
 }
 
-func TestRun(t *testing.T) {
-
-	p, err := text.PieceFromFile("./testfile.txt")
+func TestBytes(t *testing.T) {
+	// TODO: ensure contents in file before tests
+	contents := "abcdefghijklmnopqrstuvwxyz"
+	filename := "test.txt"
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0600)
 	if err != nil {
-		t.Fatalf("could not open File: %s", err.Error())	
-	}
-
-	s, err := p.Bytes()
-	if err != nil {
-		t.Errorf("could not read File: %s", err.Error())	
+		t.Errorf("could not open file %s", filename)	
 	}
 	
-	fmt.Printf("read: %s", s)
+	chain := text.Piece{
+		File: file,
+		Off: 0,
+		Len: 26,
+		Prev: nil,
+		Next: nil,
+	}
+	
+	buf, err := chain.Bytes()
+	if err != nil {
+		t.Errorf("could not get bytes from piece %s", err.Error())	
+	}
+	if string(buf) != contents {
+		t.Errorf("expected\t%s\ngot%s", buf, contents)
+	}
+	
+	atomize(&chain)
+	
+	buf, err = chain.Bytes()
+	if err != nil {
+		t.Errorf("could not get bytes from piece %s", err.Error())
+	}
+	
+	if string(buf) != contents {
+		t.Errorf("expected\t%s\ngot%s", buf, contents)
+	}
 }

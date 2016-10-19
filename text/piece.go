@@ -1,99 +1,83 @@
 package text
 
 import (
-	_ "fmt"
 	"os"
-	"bytes"
 )
 
 type Piece struct {
-	Next, Prev *Piece
-
-	Off, Len int64
-	
-	// specify whether contents is buffer or file
-	IsBuffer bool
-	// contents
 	File *os.File
-	Buf *[]byte
+	Off, Len int64
+	Prev, Next *Piece
 }
 
-func PieceFromFile(Filename string) (*Piece, error) {
-	File, err := os.Open(Filename) // TODO: ensure readonly
-	if err != nil {
-		return nil, err	
-	}
-	
-	fi, err := File.Stat()
-	if err != nil {
-		return nil, err	
+func (p *Piece) Split(pos int64) {
+
+	// splitting at divide means job done
+	if pos == 0 {
+		return
 	}
 
-	return &Piece{
-		Off: 0,
-		Len: fi.Size(),
-		File: File,
-		IsBuffer: false,
-	}, nil
-}
-
-func NewPiece() *Piece {
-	return &Piece{}
-}
-
-// split piece at pos and connect reattach links 
-// return pieces on either side of the split
-func (p *Piece) Split(pos int64) (*Piece, *Piece) {
-	
-	before, off := p.PieceAt(pos)
-
+	// splitting work occurs on future piece
 	if pos >= p.Len {
-		return p, nil
+		if p.Next == nil {
+			return
+		}
+		p.Next.Split(pos - p.Len)
+		return
 	}
-	before.Next = &Piece{
-		Next: before.Next,
-		Prev: before,
-		Off: before.Off + off,
-		Len: before.Len - off,
-		File: before.File,
-		IsBuffer: before.IsBuffer,
+	
+	newPiece := &Piece{
+		p.File,
+		p.Off + pos,
+		p.Len - pos,
+		p,
+		p.Next,
 	}
-	before.Len = pos
+	p.Next = newPiece
+	p.Len = pos
+}
 
-	return before, before.Next
+func (p *Piece) pieceAt(pos int64) (int64, *Piece) {
+	if pos < p.Len {
+		return pos, p	
+	}
+	
+	// TODO: double check this is correct: return pos as end of final piece
+	if p.Next == nil {
+		return p.Len, p
+	}
+
+	return p.Next.pieceAt(pos - p.Len)
+}
+
+func (p *Piece) bytesSingle() ([]byte, error) {
+	buf := make([]byte, p.Len)
+	_, err := p.File.ReadAt(buf, p.Off)
+	return buf, err
+}
+
+func join(a, b *Piece) {
+	if a != nil {
+		a.Next = b	
+	}
+	if b != nil {
+		b.Prev = a	
+	}
+}
+
+func patch(a, b, c *Piece) {
+	join(a, b)
+	join(b, c)
 }
 
 func (p *Piece) Bytes() ([]byte, error) {
-	buf := make([]byte, p.Len)
-	n, err := p.File.ReadAt(buf, p.Off)
-	return buf[:n], err
-}
-
-func (p *Piece) Content() ([]byte, error) {
-	var contents []byte
-	
-	for pp := p; pp != nil; pp = pp.Next {
-		buf, err := pp.Bytes()
+	var bufFull []byte
+	for piece := p; piece != nil; piece = piece.Next {
+		buf, err := piece.bytesSingle()
 		if err != nil {
-			return contents, err
+			return bufFull, err
 		}
-		contents = bytes.Join([][]byte{contents, buf}, []byte(""))
+		bufFull = append(bufFull, buf...)
 	}
-	return contents, nil
-}
-
-func (p *Piece) Insert(pos int64, np *Piece) {
-	before, after := p.Split(pos)
-	before.Next = np
-	np.Next = after
-	after.Prev = np
-	np.Prev = before
-}
-
-func (p *Piece) PieceAt(pos int64) (*Piece, int64) {
-	var pp *Piece
-	for pp = p; pos > pp.Len; pp = pp.Next {
-		pos -= pp.Len
-	}
-	return pp, pos
+	return bufFull, nil
 }
