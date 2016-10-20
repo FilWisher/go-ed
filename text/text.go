@@ -1,3 +1,10 @@
+/* 
+	Text represents the state of a file in memory
+	It is implemented as a doubly linked-list of pieces
+	Two files on disk are associated with text: the original file
+	and an append-only file that stores changes/additions 
+*/
+
 package text
 
 import (
@@ -37,7 +44,7 @@ func NewText(filename string) (*Text, error) {
 	piece := &Piece{
 		File: file,
 		Off: 0,
-		Len: fi.Size()-1,
+		Len: fi.Size(),
 	}	
 	
 	return &Text{
@@ -71,6 +78,7 @@ func (t *Text) insertPiece(pos int64, p *Piece) {
 	patch(pre, p, post)			
 }
 
+// TODO: add caching so text isn't written to disk every time
 func (t *Text) Insert(pos int64, data []byte) error {
 	n, err := t.Changes.Write(data)
 	if err != nil {
@@ -97,4 +105,22 @@ func (t *Text) Delete(pos, len int64) {
 	post := second.Next
 
 	join(pre, post)
+}
+
+// save to disk
+func (t *Text) Save() error {
+
+	file, err := os.OpenFile(t.Filename, os.O_WRONLY, 0600)
+	if err != nil {
+		return err	
+	}
+	defer file.Close()
+	
+	buf, err := t.First.Bytes()
+	if err != nil {
+		return err	
+	}
+
+	_, err = file.Write(buf)
+	return err
 }

@@ -1,3 +1,8 @@
+/* 
+	Piece is a portion of a file in memory
+	The contents of a piece are stored in a file on disk
+*/
+
 package text
 
 import (

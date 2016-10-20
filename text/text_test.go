@@ -4,11 +4,12 @@ import (
 	"testing"
 	"github.com/filwisher/go-ed/text"	
 	"os"
+	"io/ioutil"
 )
 
 const (
-	filename = "test.txt"
-	contents = "abcdefghijklmnopqrstuvwxyz"
+	FILENAME = "test.txt"
+	CONTENTS = "abcdefghijklmnopqrstuvwxyz"
 )
 
 func cleanup(txt *text.Text) {
@@ -18,10 +19,15 @@ func cleanup(txt *text.Text) {
 }
 
 func TestNewText(t *testing.T) {
-	
-	txt, err := text.NewText(filename)
+
+	err := ioutil.WriteFile(FILENAME, []byte(CONTENTS), 0600)
 	if err != nil {
-		t.Errorf("could not open %s: %s", filename)	
+		t.Errorf("could not make file: %s", err.Error())	
+	}
+
+	txt, err := text.NewText(FILENAME)
+	if err != nil {
+		t.Errorf("could not open %s: %s", FILENAME)	
 	}
 	defer cleanup(txt)
 	
@@ -30,22 +36,27 @@ func TestNewText(t *testing.T) {
 		t.Errorf("could not read bytes %s", err.Error())	
 	}
 
-	if string(buf) != contents {
-		t.Errorf("got %s but expected %s", buf, contents)	
+	if string(buf) != CONTENTS {
+		t.Errorf("got %s but expected %s", buf, CONTENTS)	
 	}
 }
 
 func TestInsert(t *testing.T) {
 
-	txt, err := text.NewText(filename)
+	err := ioutil.WriteFile(FILENAME, []byte(CONTENTS), 0600)
 	if err != nil {
-		t.Errorf("could not open %s: %s", filename)	
+		t.Errorf("could not make file: %s", err.Error())	
+	}
+	
+	txt, err := text.NewText(FILENAME)
+	if err != nil {
+		t.Errorf("could not open %s: %s", FILENAME)	
 	}
 	defer cleanup(txt)
 	
 	split := int64(5)
-	txt.Insert(split, []byte(contents))
-	expected := contents[:split] + contents + contents[split:]
+	txt.Insert(split, []byte(CONTENTS))
+	expected := CONTENTS[:split] + CONTENTS + CONTENTS[split:]
 	
 	buf, err := txt.First.Bytes()
 	if err != nil {
@@ -58,15 +69,20 @@ func TestInsert(t *testing.T) {
 }
 
 func TestAppend(t *testing.T) {
-
-	txt, err := text.NewText(filename)
+	
+	err := ioutil.WriteFile(FILENAME, []byte(CONTENTS), 0600)
 	if err != nil {
-		t.Errorf("could not open %s: %s", filename)	
+		t.Errorf("could not make file: %s", err.Error())	
+	}
+
+	txt, err := text.NewText(FILENAME)
+	if err != nil {
+		t.Errorf("could not open %s: %s", FILENAME)	
 	}
 	defer cleanup(txt)
 		
-	txt.Insert(txt.First.Len, []byte(contents))
-	expected := contents + contents
+	txt.Insert(txt.First.Len, []byte(CONTENTS))
+	expected := CONTENTS + CONTENTS
 	
 	buf, err := txt.First.Bytes()
 	if err != nil {
@@ -80,16 +96,21 @@ func TestAppend(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	
-	txt, err := text.NewText(filename)
+	err := ioutil.WriteFile(FILENAME, []byte(CONTENTS), 0600)
 	if err != nil {
-		t.Errorf("could not open %s: %s", filename)	
+		t.Errorf("could not make file: %s", err.Error())	
+	}
+	
+	txt, err := text.NewText(FILENAME)
+	if err != nil {
+		t.Errorf("could not open %s: %s", FILENAME)	
 	}
 	defer cleanup(txt)
 
 	pos := 2
 	len := 24
 	txt.Delete(2,24)
-	expected := contents[:pos] + contents[pos+len:]
+	expected := CONTENTS[:pos] + CONTENTS[pos+len:]
 	
 	buf, err := txt.First.Bytes()
 	if err != nil {
@@ -97,5 +118,36 @@ func TestDelete(t *testing.T) {
 	}
 	if string(buf) != expected {
 		t.Errorf("got %s but expected %s", buf, expected)	
+	}
+}
+
+func TestSave(t *testing.T) {
+	
+	err := ioutil.WriteFile(FILENAME, []byte(CONTENTS), 0600)
+	if err != nil {
+		t.Errorf("could not make file: %s", err.Error())
+	}
+	
+	txt, err := text.NewText(FILENAME)
+	if err != nil {
+		t.Errorf("could not open %s: %s", FILENAME)	
+	}
+	defer cleanup(txt)
+	
+	txt.Insert(txt.First.Len, []byte(CONTENTS))
+	err = txt.Save()
+	if err != nil {
+		t.Errorf("could not save: %s", err.Error())	
+	}
+	
+	expected := CONTENTS + CONTENTS
+	
+	got, err := ioutil.ReadFile(FILENAME)
+	if err != nil {
+		t.Errorf("could not open file %s", err.Error())
+	}
+	
+	if string(got) != expected {
+		t.Errorf("got %s but expected %s", got, expected)	
 	}
 }
