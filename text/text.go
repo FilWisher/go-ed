@@ -28,7 +28,7 @@ func NewText(filename string) (*Text, error) {
 	}
 	
 	// open tmp file for changes (read and append)
-	tmpname := fmt.Sprintf("%d", time.Now().Unix())
+	tmpname := fmt.Sprintf("%d.wed", time.Now().Unix())
 	tmp, err := os.OpenFile(tmpname, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0600)
 	if err != nil {
 		return nil, err	
@@ -84,4 +84,17 @@ func (t *Text) Insert(pos int64, data []byte) error {
 	t.lastWrite += int64(n)
 	t.insertPiece(pos, piece)
 	return nil
+}
+
+func (t *Text) Delete(pos, len int64) {
+	split1, first := t.First.pieceAt(pos)
+	first.Split(split1)
+	
+	split2, second := first.pieceAt(pos+len)
+	second.Split(split2)
+	
+	pre := first
+	post := second.Next
+
+	join(pre, post)
 }

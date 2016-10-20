@@ -31,7 +31,7 @@ func TestNewText(t *testing.T) {
 	}
 
 	if string(buf) != contents {
-		t.Errorf("got %s but expected %s", buf[:len(contents)], contents)	
+		t.Errorf("got %s but expected %s", buf, contents)	
 	}
 }
 
@@ -53,7 +53,7 @@ func TestInsert(t *testing.T) {
 	}
 
 	if string(buf) != expected {
-		t.Errorf("got %s but expected %s", buf[:len(contents)], expected)	
+		t.Errorf("got %s but expected %s", buf, expected)	
 	}
 }
 
@@ -74,6 +74,28 @@ func TestAppend(t *testing.T) {
 	}
 
 	if string(buf) != expected {
-		t.Errorf("got %s but expected %s", buf[:len(expected)], expected)	
+		t.Errorf("got %s but expected %s", buf, expected)	
+	}
+}
+
+func TestDelete(t *testing.T) {
+	
+	txt, err := text.NewText(filename)
+	if err != nil {
+		t.Errorf("could not open %s: %s", filename)	
+	}
+	defer cleanup(txt)
+
+	pos := 2
+	len := 24
+	txt.Delete(2,24)
+	expected := contents[:pos] + contents[pos+len:]
+	
+	buf, err := txt.First.Bytes()
+	if err != nil {
+		t.Errorf("could not read bytes %s", err.Error())	
+	}
+	if string(buf) != expected {
+		t.Errorf("got %s but expected %s", buf, expected)	
 	}
 }
