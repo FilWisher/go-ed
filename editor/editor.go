@@ -1,5 +1,6 @@
 /*
-	Editor implements the logic of
+	Editor exposes core functionality of multi-file editor
+	It does not implement any rendering and therefore any cursor logic
 */
 
 package editor
