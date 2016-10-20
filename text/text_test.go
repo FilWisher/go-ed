@@ -3,7 +3,6 @@ package text_test
 import (
 	"testing"
 	"github.com/filwisher/go-ed/text"	
-	"os"
 	"io/ioutil"
 )
 
@@ -11,12 +10,6 @@ const (
 	FILENAME = "test.txt"
 	CONTENTS = "abcdefghijklmnopqrstuvwxyz"
 )
-
-func cleanup(txt *text.Text) {
-	txt.File.Close()
-	txt.Changes.Close()
-	os.Remove(txt.Changesname)
-}
 
 func TestNewText(t *testing.T) {
 
@@ -29,7 +22,7 @@ func TestNewText(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open %s: %s", FILENAME)	
 	}
-	defer cleanup(txt)
+	defer txt.Exit()
 	
 	buf, err := txt.First.Bytes()
 	if err != nil {
@@ -52,7 +45,7 @@ func TestInsert(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open %s: %s", FILENAME)	
 	}
-	defer cleanup(txt)
+	defer txt.Exit()
 	
 	split := int64(5)
 	txt.Insert(split, []byte(CONTENTS))
@@ -79,7 +72,7 @@ func TestAppend(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open %s: %s", FILENAME)	
 	}
-	defer cleanup(txt)
+	defer txt.Exit()
 		
 	txt.Insert(txt.First.Len, []byte(CONTENTS))
 	expected := CONTENTS + CONTENTS
@@ -105,7 +98,7 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open %s: %s", FILENAME)	
 	}
-	defer cleanup(txt)
+	defer txt.Exit()
 
 	pos := 2
 	len := 24
@@ -132,7 +125,7 @@ func TestSave(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open %s: %s", FILENAME)	
 	}
-	defer cleanup(txt)
+	defer txt.Exit()
 	
 	txt.Insert(txt.First.Len, []byte(CONTENTS))
 	err = txt.Save()

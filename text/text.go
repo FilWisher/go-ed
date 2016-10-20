@@ -3,6 +3,9 @@
 	It is implemented as a doubly linked-list of pieces
 	Two files on disk are associated with text: the original file
 	and an append-only file that stores changes/additions 
+	
+	It defines the MINIMUM necessary functionality to open, edit, 
+	and save text. Methods should be entirely orthogonal.
 */
 
 package text
@@ -123,4 +126,11 @@ func (t *Text) Save() error {
 
 	_, err = file.Write(buf)
 	return err
+}
+
+// cleanup and remove temp files
+func (t *Text) Exit() error {
+	t.Changes.Close()
+	t.File.Close()
+	return os.Remove(t.Changesname)
 }
